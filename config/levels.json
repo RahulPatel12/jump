@@ -1,0 +1,54 @@
+{
+    "levels": [
+        {
+            "id": "level1",
+            "name": "Level 1",
+            "description": "Tutorial Level",
+            "unlocked": true,
+            "completion_required": null,
+            "model_file": "levels/level1.bam",
+            "spawn_point": [0, 0, 2],
+            "objectives": [
+                {
+                    "type": "reach_point",
+                    "position": [10, 10, 2],
+                    "radius": 1.0
+                }
+            ],
+            "collectibles": [
+                {
+                    "type": "coin",
+                    "position": [5, 5, 3],
+                    "value": 100
+                }
+            ]
+        },
+        {
+            "id": "level2",
+            "name": "Level 2",
+            "description": "First Challenge",
+            "unlocked": true,
+            "completion_required": "level1",
+            "model_file": "levels/level2.bam",
+            "spawn_point": [0, 0, 2],
+            "objectives": [
+                {
+                    "type": "collect_all",
+                    "item_type": "coin"
+                }
+            ],
+            "collectibles": [
+                {
+                    "type": "coin",
+                    "position": [5, 5, 3],
+                    "value": 100
+                },
+                {
+                    "type": "coin",
+                    "position": [-5, 5, 3],
+                    "value": 100
+                }
+            ]
+        }
+    ]
+} 

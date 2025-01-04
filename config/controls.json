@@ -1,0 +1,11 @@
+{
+    "move_forward": "w",
+    "move_backward": "s",
+    "move_left": "a",
+    "move_right": "d",
+    "jump": "space",
+    "attack": "mouse1",
+    "block": "mouse2",
+    "dodge": "shift",
+    "pause": "escape"
+} 
