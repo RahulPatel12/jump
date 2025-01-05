@@ -4,6 +4,7 @@ from panda3d.core import (
     CollisionHandlerQueue,
     CollisionNode,
     CollisionSphere,
+    CollisionCapsule,
     CollisionRay,
     CollisionBox,
     CollisionPlane,
@@ -21,6 +22,8 @@ class CollisionSystem:
     MASK_ENEMY = BitMask32.bit(3)
     MASK_COLLECTIBLE = BitMask32.bit(4)
     MASK_TRIGGER = BitMask32.bit(5)
+    MASK_WALL = BitMask32.bit(6)
+    MASK_CLIMBABLE = BitMask32.bit(7)
     
     def __init__(self, base):
         self.base = base
@@ -33,15 +36,16 @@ class CollisionSystem:
         self.pusher = CollisionHandlerPusher()
         self.queue = CollisionHandlerQueue()
         
-        # Enable debug visualization if needed
-        # self.traverser.showCollisions(self.base.render)
+        # Enable debug visualization
+        self.traverser.showCollisions(self.base.render)
     
     def setup_player_collisions(self, player):
         """Set up collision detection for the player"""
-        # Player body collision (for walls and obstacles)
+        # Player body collision (capsule for better 3D collision)
         body_node = CollisionNode("player_body")
-        body_node.addSolid(CollisionSphere(0, 0, 1, 0.5))  # Center at feet + 1 unit, radius 0.5
-        body_node.setFromCollideMask(self.MASK_TERRAIN | self.MASK_PLATFORM)
+        # Capsule from feet to head (radius 0.4, height 1.8)
+        body_node.addSolid(CollisionCapsule(Point3(0, 0, 0), Point3(0, 0, 1.8), 0.4))
+        body_node.setFromCollideMask(self.MASK_TERRAIN | self.MASK_PLATFORM | self.MASK_WALL)
         body_node.setIntoCollideMask(BitMask32.allOff())
         
         body_np = player.actor.attachNewNode(body_node)
@@ -63,7 +67,6 @@ class CollisionSystem:
     
     def setup_platform(self, model, is_moving=False):
         """Set up collision for a platform"""
-        # Get platform dimensions
         bounds = model.getTightBounds()
         if bounds:
             min_point, max_point = bounds
@@ -73,15 +76,32 @@ class CollisionSystem:
             size = Vec3(1, 1, 1)
             center = Point3(0, 0, 0)
         
-        # Create collision box
         collision_node = CollisionNode("platform")
         collision_node.addSolid(CollisionBox(center, size.x/2, size.y/2, size.z/2))
         
-        # Set collision masks
         collision_node.setFromCollideMask(BitMask32.allOff())
         collision_node.setIntoCollideMask(self.MASK_TERRAIN if not is_moving else self.MASK_PLATFORM)
         
-        # Attach collision node
+        collision_np = model.attachNewNode(collision_node)
+        return collision_np
+    
+    def setup_climbable_wall(self, model):
+        """Set up collision for a climbable wall"""
+        bounds = model.getTightBounds()
+        if bounds:
+            min_point, max_point = bounds
+            size = max_point - min_point
+            center = (min_point + max_point) / 2
+        else:
+            size = Vec3(1, 1, 1)
+            center = Point3(0, 0, 0)
+        
+        collision_node = CollisionNode("climbable_wall")
+        collision_node.addSolid(CollisionBox(center, size.x/2, size.y/2, size.z/2))
+        
+        collision_node.setFromCollideMask(BitMask32.allOff())
+        collision_node.setIntoCollideMask(self.MASK_WALL | self.MASK_CLIMBABLE)
+        
         collision_np = model.attachNewNode(collision_node)
         return collision_np
     
@@ -94,24 +114,9 @@ class CollisionSystem:
         
         trigger_np = self.base.render.attachNewNode(trigger_node)
         trigger_np.setPos(pos)
-        
-        # Store callback
         trigger_np.setPythonTag("callback", callback)
         
         return trigger_np
-    
-    def setup_collectible(self, model, callback):
-        """Set up collision for a collectible item"""
-        collision_node = CollisionNode("collectible")
-        collision_node.addSolid(CollisionSphere(0, 0, 0, 0.5))  # Adjust radius as needed
-        
-        collision_node.setFromCollideMask(BitMask32.allOff())
-        collision_node.setIntoCollideMask(self.MASK_COLLECTIBLE)
-        
-        collision_np = model.attachNewNode(collision_node)
-        collision_np.setPythonTag("callback", callback)
-        
-        return collision_np
     
     def check_ground_collision(self, player):
         """Check if player is touching ground"""
@@ -124,16 +129,24 @@ class CollisionSystem:
                 entries.append(entry)
         
         if entries:
-            # Sort entries by distance
             entries.sort(key=lambda x: x.getSurfacePoint(player.actor).getZ())
-            # Get closest point of impact
             contact = entries[0].getSurfacePoint(player.actor)
-            # Check if point is close enough to consider on ground
-            return contact.getZ() <= 0.1  # Adjust threshold as needed
+            return contact.getZ() <= 0.1  # Check if point is close enough to consider on ground
+        
+        return False
+    
+    def check_wall_collision(self, player):
+        """Check if player is touching a climbable wall"""
+        self.traverser.traverse(self.base.render)
+        
+        for i in range(self.queue.getNumEntries()):
+            entry = self.queue.getEntry(i)
+            if entry.getFromNode().name == "player_wall_ray":
+                if entry.getIntoNode().getIntoCollideMask().hasBit(self.MASK_CLIMBABLE.getLowestOnBit()):
+                    return True
         
         return False
     
     def cleanup(self):
         """Clean up collision system"""
-        self.traverser.clearColliders()
-        # Remove any persistent collision nodes if needed 
+        self.traverser.clearColliders() 
