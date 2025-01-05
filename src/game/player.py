@@ -1,5 +1,5 @@
 from direct.actor.Actor import Actor
-from panda3d.core import Point3, Vec3, CardMaker, WindowProperties
+from panda3d.core import Point3, Vec3, WindowProperties, NodePath, Loader
 from direct.task import Task
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBaseGlobal import globalClock
@@ -11,29 +11,29 @@ class Player(DirectObject):
         self.base = base
         self.collision_system = collision_system
         
-        # Create a temporary card as the player model
-        cm = CardMaker('player_card')
-        cm.setFrame(-0.5, 0.5, -0.5, 0.5)  # 1x1 card
-        self.actor = self.base.render.attachNewNode(cm.generate())
-        self.actor.setColor(1, 0, 0, 1)  # Red color
-        self.actor.setPos(0, 0, 0.5)  # Slightly above ground
+        # Create a basic 3D model for the player (temporary cube)
+        # Later this can be replaced with a proper character model
+        self.actor = self.create_player_model()
+        self.actor.setPos(0, 0, 1)  # Start slightly above ground
+        self.actor.reparentTo(self.base.render)
         
         # Movement variables
         self.velocity = Vec3(0, 0, 0)
-        self.move_speed = 15.0  # Units per second
-        self.acceleration = 40.0  # Units per second squared
-        self.friction = 0.85  # Velocity multiplier per second
+        self.move_speed = 15.0
+        self.acceleration = 40.0
+        self.friction = 0.85
         self.jump_force = 15.0
         self.gravity = -30.0
         self.on_ground = False
+        self.fall_threshold = -50  # Point at which player dies from falling
         
         # Camera variables
-        self.camera_height = 2.0
-        self.camera_distance = 5.0
-        self.camera_pitch = -15.0  # Degrees
-        self.mouse_sensitivity = 20  # Increased from 0.2
-        self.pitch_limits = (-80, 80)  # Limit vertical rotation
-        self.heading = 0  # Player's heading in degrees
+        self.camera_height = 1.5  # Adjusted down from 2.0
+        self.camera_distance = 8.0  # Increased from 5.0 for better view
+        self.camera_pitch = -15.0
+        self.mouse_sensitivity = 20
+        self.pitch_limits = (-80, 80)
+        self.heading = 0
         
         # Center mouse and hide cursor
         props = WindowProperties()
@@ -50,10 +50,78 @@ class Player(DirectObject):
             "backward": False,
             "left": False,
             "right": False,
-            "jump": False
+            "jump": False,
+            "sprint": False
         }
         
         # Bind keys
+        self.bind_keys()
+        
+        # Set up collision detection
+        if self.collision_system:
+            self.collision_system.setup_player_collisions(self)
+
+    def create_player_model(self):
+        """Create a basic 3D model for the player"""
+        # Create a temporary cube model
+        # This will be replaced with a proper character model later
+        model = self.base.loader.loadModel("models/box")
+        if not model:
+            # If the box model isn't available, create a procedural cube
+            from panda3d.core import GeomVertexFormat, GeomVertexData
+            from panda3d.core import Geom, GeomTriangles, GeomVertexWriter
+            from panda3d.core import GeomNode
+            
+            # Create the vertex format
+            format = GeomVertexFormat.getV3n3c4()
+            vdata = GeomVertexData('cube', format, Geom.UHStatic)
+            
+            # Create writers for vertex data
+            vertex = GeomVertexWriter(vdata, 'vertex')
+            normal = GeomVertexWriter(vdata, 'normal')
+            color = GeomVertexWriter(vdata, 'color')
+            
+            # Define the vertices
+            vertices = [
+                (-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5),
+                (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)
+            ]
+            
+            # Add the vertices to the vertex data
+            for v in vertices:
+                vertex.addData3(*v)
+                normal.addData3(0, 0, 1)  # Simple normal
+                color.addData4(0.5, 0.5, 1.0, 1.0)  # Blue-ish color
+            
+            # Create the triangles
+            prim = GeomTriangles(Geom.UHStatic)
+            indices = [
+                0, 1, 2, 0, 2, 3,  # Bottom
+                4, 5, 6, 4, 6, 7,  # Top
+                0, 4, 7, 0, 7, 3,  # Left
+                1, 5, 6, 1, 6, 2,  # Right
+                0, 1, 5, 0, 5, 4,  # Back
+                3, 2, 6, 3, 6, 7   # Front
+            ]
+            
+            # Add the indices to create the triangles
+            for i in range(0, len(indices), 3):
+                prim.addVertices(indices[i], indices[i + 1], indices[i + 2])
+            
+            # Create the geometry and node
+            geom = Geom(vdata)
+            geom.addPrimitive(prim)
+            node = GeomNode('player_cube')
+            node.addGeom(geom)
+            
+            model = NodePath(node)
+        
+        # Scale the model to a reasonable size
+        model.setScale(1, 1, 2)  # Make it twice as tall as wide
+        return model
+
+    def bind_keys(self):
+        """Bind all player control keys"""
         self.accept("w", self.updateKey, ["forward", True])
         self.accept("w-up", self.updateKey, ["forward", False])
         self.accept("s", self.updateKey, ["backward", True])
@@ -64,10 +132,16 @@ class Player(DirectObject):
         self.accept("d-up", self.updateKey, ["right", False])
         self.accept("space", self.updateKey, ["jump", True])
         self.accept("space-up", self.updateKey, ["jump", False])
+        self.accept("shift", self.updateKey, ["sprint", True])
+        self.accept("shift-up", self.updateKey, ["sprint", False])
     
     def updateKey(self, key, value):
         """Update the state of a key"""
         self.keys[key] = value
+        
+        # Adjust movement speed when sprinting
+        if key == "sprint":
+            self.move_speed = 25.0 if value else 15.0
     
     def update(self, task):
         """Update player position and state"""
@@ -84,7 +158,7 @@ class Player(DirectObject):
                 int(self.base.win.getYSize() / 2))
             
             # Update player heading and camera pitch
-            self.heading -= mouse_x * self.mouse_sensitivity * 100 * dt
+            self.heading += mouse_x * self.mouse_sensitivity * 100 * dt
             self.camera_pitch += mouse_y * self.mouse_sensitivity * 100 * dt
             
             # Clamp the pitch to prevent over-rotation
@@ -113,8 +187,8 @@ class Player(DirectObject):
             
             # Rotate movement vector by heading
             world_move = Vec3(
-                move_dir.getX() * cos_h + move_dir.getY() * sin_h,
-                -move_dir.getX() * sin_h + move_dir.getY() * cos_h,
+                move_dir.getX() * cos_h - move_dir.getY() * sin_h,
+                move_dir.getX() * sin_h + move_dir.getY() * cos_h,
                 0
             )
             
@@ -123,7 +197,7 @@ class Player(DirectObject):
             self.velocity.setY(self.velocity.getY() + world_move.getY() * self.acceleration * dt)
         
         # Apply friction to horizontal movement
-        friction = math.pow(self.friction, dt * 60)  # Adjust friction based on frame rate
+        friction = math.pow(self.friction, dt * 60)
         self.velocity.setX(self.velocity.getX() * friction)
         self.velocity.setY(self.velocity.getY() * friction)
         
@@ -145,15 +219,18 @@ class Player(DirectObject):
         # Move player
         new_pos = self.actor.getPos() + self.velocity * dt
         
-        # Ground collision check
-        if new_pos.getZ() < 0.5:  # 0.5 is half height of player
-            new_pos.setZ(0.5)
-            self.velocity.setZ(0)
-            self.on_ground = True
-        else:
-            self.on_ground = False
+        # Check if player has fallen too far
+        if new_pos.getZ() < self.fall_threshold:
+            # Reset player position (or implement death/respawn)
+            new_pos = Point3(0, 0, 1)
+            self.velocity = Vec3(0, 0, 0)
         
+        # Update position
         self.actor.setPos(new_pos)
+        
+        # Update ground state using collision system
+        if self.collision_system:
+            self.on_ground = self.collision_system.check_ground_collision(self)
         
         return Task.cont
     
@@ -175,11 +252,11 @@ class Player(DirectObject):
         cam_y = self.actor.getY() - math.cos(heading_rad) * horiz_dist
         cam_z = self.actor.getZ() + cam_height + cam_distance * math.sin(pitch_rad)
         
-        # Set camera position and make it look at player
+        # Set camera position
         self.base.camera.setPos(cam_x, cam_y, cam_z)
         
-        # Make camera look at a point slightly above the player
-        look_at_height = self.actor.getZ() + 1.0  # Look at point 1 unit above player
+        # Make camera look at a point slightly above the player's center
+        look_at_height = self.actor.getZ() + self.camera_height * 0.3  # Lowered from 0.5 to 0.3
         self.base.camera.lookAt(
             self.actor.getX(),
             self.actor.getY(),
@@ -192,7 +269,8 @@ class Player(DirectObject):
         """Clean up resources"""
         self.base.taskMgr.remove("player_update")
         self.base.taskMgr.remove("camera_update")
-        self.actor.removeNode()
+        if self.actor:
+            self.actor.removeNode()
         
         # Show cursor
         props = WindowProperties()
@@ -200,13 +278,4 @@ class Player(DirectObject):
         self.base.win.requestProperties(props)
         
         # Unbind keys
-        self.ignore("w")
-        self.ignore("w-up")
-        self.ignore("s")
-        self.ignore("s-up")
-        self.ignore("a")
-        self.ignore("a-up")
-        self.ignore("d")
-        self.ignore("d-up")
-        self.ignore("space")
-        self.ignore("space-up") 
+        self.ignoreAll() 
