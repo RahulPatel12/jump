@@ -1,6 +1,6 @@
 """Common UI utilities and constants used across UI components"""
 from direct.gui.DirectGui import DGG
-from panda3d.core import TextNode
+from panda3d.core import TextNode, TextProperties, TextPropertiesManager
 
 # Text alignments (using TextNode constants)
 TEXT_ALIGN_CENTER = TextNode.ACenter
@@ -23,7 +23,8 @@ BUTTON_DEFAULTS = {
     'relief': DGG.FLAT,
     'frameColor': COLOR_BUTTON,
     'text_fg': COLOR_WHITE,
-    'pressEffect': True
+    'pressEffect': True,
+    'text_style': TextNode.TBold
 }
 
 def setup_text_properties():

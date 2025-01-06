@@ -105,7 +105,7 @@ class MainMenu:
     def on_play(self):
         """Handle play button click"""
         self.hide()
-        self.game_manager.request('LevelSelect')
+        self.game_manager.request('NameInput')
     
     def on_options(self):
         """Handle options button click"""

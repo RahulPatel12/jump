@@ -1,0 +1,55 @@
+{
+    "video": {
+        "resolution": [
+            1920,
+            1080
+        ],
+        "fullscreen": false,
+        "vsync": true,
+        "graphics_quality": "medium"
+    },
+    "audio": {
+        "master_volume": 1.0,
+        "music_volume": 0.7,
+        "sfx_volume": 0.8
+    },
+    "controls": {
+        "move_forward": [
+            "w",
+            "arrow_up"
+        ],
+        "move_backward": [
+            "s",
+            "arrow_down"
+        ],
+        "move_left": [
+            "a",
+            "arrow_left"
+        ],
+        "move_right": [
+            "d",
+            "arrow_right"
+        ],
+        "jump": [
+            "space"
+        ],
+        "run": [
+            "shift"
+        ],
+        "attack": [
+            "mouse1"
+        ],
+        "block": [
+            "mouse2"
+        ],
+        "dodge": [
+            "control"
+        ],
+        "pause": [
+            "escape"
+        ],
+        "interact": [
+            "e"
+        ]
+    }
+}

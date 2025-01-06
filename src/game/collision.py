@@ -1,18 +1,13 @@
-from panda3d.core import (
-    CollisionTraverser,
-    CollisionHandlerPusher,
-    CollisionHandlerQueue,
-    CollisionNode,
-    CollisionSphere,
-    CollisionCapsule,
-    CollisionRay,
-    CollisionBox,
-    CollisionPlane,
-    Plane,
-    Point3,
-    Vec3,
-    BitMask32
-)
+from panda3d.bullet import BulletWorld
+from panda3d.bullet import BulletCharacterControllerNode
+from panda3d.bullet import BulletCapsuleShape
+from panda3d.bullet import BulletTriangleMesh
+from panda3d.bullet import BulletTriangleMeshShape
+from panda3d.bullet import BulletRigidBodyNode
+from panda3d.bullet import ZUp
+from panda3d.core import BitMask32, Point3, Vec3
+from direct.showbase.ShowBaseGlobal import globalClock
+from panda3d.bullet import BulletDebugNode
 
 class CollisionSystem:
     # Collision masks
@@ -22,131 +17,99 @@ class CollisionSystem:
     MASK_ENEMY = BitMask32.bit(3)
     MASK_COLLECTIBLE = BitMask32.bit(4)
     MASK_TRIGGER = BitMask32.bit(5)
-    MASK_WALL = BitMask32.bit(6)
-    MASK_CLIMBABLE = BitMask32.bit(7)
     
     def __init__(self, base):
         self.base = base
         
-        # Create collision traverser
-        self.traverser = CollisionTraverser("Main")
-        self.traverser.setRespectPrevTransform(True)  # For continuous collision detection
-        
-        # Create collision handlers
-        self.pusher = CollisionHandlerPusher()
-        self.queue = CollisionHandlerQueue()
+        # Create Bullet world
+        self.world = BulletWorld()
+        self.world.setGravity(Vec3(0, 0, -75.0))
         
         # Enable debug visualization
-        self.traverser.showCollisions(self.base.render)
+        debugNode = BulletDebugNode('Debug')
+        debugNode.showWireframe(True)
+        debugNode.showConstraints(True)
+        debugNode.showBoundingBoxes(True)
+        debugNode.showNormals(True)
+        
+        debugNP = self.base.render.attachNewNode(debugNode)
+        debugNP.show()
+        
+        self.world.setDebugNode(debugNode)
+        
+        # Add physics update task
+        self.base.taskMgr.add(self.update, "physics_update")
     
-    def setup_player_collisions(self, player):
+    def setup_player(self, player):
         """Set up collision detection for the player"""
-        # Player body collision (capsule for better 3D collision)
-        body_node = CollisionNode("player_body")
-        # Capsule from feet to head (radius 0.4, height 1.8)
-        body_node.addSolid(CollisionCapsule(Point3(0, 0, 0), Point3(0, 0, 1.8), 0.4))
-        body_node.setFromCollideMask(self.MASK_TERRAIN | self.MASK_PLATFORM | self.MASK_WALL)
-        body_node.setIntoCollideMask(BitMask32.allOff())
+        # Create capsule shape for player
+        shape = BulletCapsuleShape(0.5, 1.0, ZUp)  # radius, height, up-axis
+        player_node = BulletCharacterControllerNode(shape, 0.4, 'Player')  # shape, step height, name
+        player_np = self.base.render.attachNewNode(player_node)
+        player_np.setPos(0, 0, 2)  # Start slightly above ground
         
-        body_np = player.actor.attachNewNode(body_node)
-        self.pusher.addCollider(body_np, player.actor)
-        self.traverser.addCollider(body_np, self.pusher)
+        # Set specific collision mask for player (can collide with terrain, platforms, enemy bullets)
+        player_np.setCollideMask(self.MASK_PLAYER | self.MASK_TERRAIN | self.MASK_PLATFORM)
         
-        # Ground ray for checking if player is on ground
-        ray_node = CollisionNode("player_ground_ray")
-        ray_node.addSolid(CollisionRay(0, 0, 0.1, 0, 0, -1))  # Slightly above feet, pointing down
-        ray_node.setFromCollideMask(self.MASK_TERRAIN | self.MASK_PLATFORM)
-        ray_node.setIntoCollideMask(BitMask32.allOff())
+        # Set up character controller properties
+        player_node.setGravity(35.0)  # Reduced gravity for better jump control
+        player_node.setMaxSlope(45.0)  # Maximum slope the player can climb (in degrees)
+        player_node.setMaxJumpHeight(8.0)  # Increased max jump height
+        player_node.setJumpSpeed(20.0)  # Set base jump speed
+        player_node.setFallSpeed(45.0)  # Reduced fall speed for better control
         
-        ray_np = player.actor.attachNewNode(ray_node)
-        self.traverser.addCollider(ray_np, self.queue)
-        
-        # Store collision nodes
-        player.collision_body = body_np
-        player.ground_ray = ray_np
+        self.world.attachCharacter(player_np.node())
+        return player_np
     
-    def setup_platform(self, model, is_moving=False):
-        """Set up collision for a platform"""
-        bounds = model.getTightBounds()
-        if bounds:
-            min_point, max_point = bounds
-            size = max_point - min_point
-            center = (min_point + max_point) / 2
-        else:
-            size = Vec3(1, 1, 1)
-            center = Point3(0, 0, 0)
+    def setup_enemy(self, enemy):
+        """Set up collision detection for an enemy"""
+        # Create capsule shape for enemy
+        shape = BulletCapsuleShape(0.5, 1.0, ZUp)  # radius, height, up-axis
+        enemy_node = BulletCharacterControllerNode(shape, 0.4, 'Enemy')  # shape, step height, name
+        enemy_np = self.base.render.attachNewNode(enemy_node)
         
-        collision_node = CollisionNode("platform")
-        collision_node.addSolid(CollisionBox(center, size.x/2, size.y/2, size.z/2))
+        # Set specific collision mask for enemy (can collide with terrain, platforms, player bullets)
+        enemy_np.setCollideMask(self.MASK_ENEMY | self.MASK_TERRAIN | self.MASK_PLATFORM)
         
-        collision_node.setFromCollideMask(BitMask32.allOff())
-        collision_node.setIntoCollideMask(self.MASK_TERRAIN if not is_moving else self.MASK_PLATFORM)
-        
-        collision_np = model.attachNewNode(collision_node)
-        return collision_np
+        self.world.attachCharacter(enemy_np.node())
+        return enemy_np
     
-    def setup_climbable_wall(self, model):
-        """Set up collision for a climbable wall"""
-        bounds = model.getTightBounds()
-        if bounds:
-            min_point, max_point = bounds
-            size = max_point - min_point
-            center = (min_point + max_point) / 2
-        else:
-            size = Vec3(1, 1, 1)
-            center = Point3(0, 0, 0)
+    def make_collision_from_model(self, model, mass=0):
+        """Create collision mesh from a 3D model"""
+        # Create triangle mesh from model geometry
+        mesh = BulletTriangleMesh()
+        for np in model.findAllMatches('**/+GeomNode'):
+            geom_node = np.node()
+            for i in range(geom_node.getNumGeoms()):
+                mesh.addGeom(geom_node.getGeom(i))
         
-        collision_node = CollisionNode("climbable_wall")
-        collision_node.addSolid(CollisionBox(center, size.x/2, size.y/2, size.z/2))
+        shape = BulletTriangleMeshShape(mesh, dynamic=False)
         
-        collision_node.setFromCollideMask(BitMask32.allOff())
-        collision_node.setIntoCollideMask(self.MASK_WALL | self.MASK_CLIMBABLE)
+        # Create rigid body
+        body = BulletRigidBodyNode('model_collision')
+        body_np = self.base.render.attachNewNode(body)
+        body_np.node().addShape(shape)
+        body_np.node().setMass(mass)
+        body_np.node().setFriction(0.5)
+        body_np.setPos(model.getPos())
+        body_np.setHpr(model.getHpr())
+        body_np.setScale(model.getScale())
+        body_np.setCollideMask(BitMask32.allOn())
         
-        collision_np = model.attachNewNode(collision_node)
-        return collision_np
+        self.world.attachRigidBody(body_np.node())
+        return body_np
     
-    def setup_trigger_volume(self, pos, size, name, callback):
-        """Create a trigger volume that calls a function when entered"""
-        trigger_node = CollisionNode(f"trigger_{name}")
-        trigger_node.addSolid(CollisionBox(Point3(0, 0, 0), size.x/2, size.y/2, size.z/2))
-        trigger_node.setFromCollideMask(BitMask32.allOff())
-        trigger_node.setIntoCollideMask(self.MASK_TRIGGER)
-        
-        trigger_np = self.base.render.attachNewNode(trigger_node)
-        trigger_np.setPos(pos)
-        trigger_np.setPythonTag("callback", callback)
-        
-        return trigger_np
-    
-    def check_ground_collision(self, player):
-        """Check if player is touching ground"""
-        self.traverser.traverse(self.base.render)
-        
-        entries = []
-        for i in range(self.queue.getNumEntries()):
-            entry = self.queue.getEntry(i)
-            if entry.getFromNode().name == "player_ground_ray":
-                entries.append(entry)
-        
-        if entries:
-            entries.sort(key=lambda x: x.getSurfacePoint(player.actor).getZ())
-            contact = entries[0].getSurfacePoint(player.actor)
-            return contact.getZ() <= 0.1  # Check if point is close enough to consider on ground
-        
-        return False
-    
-    def check_wall_collision(self, player):
-        """Check if player is touching a climbable wall"""
-        self.traverser.traverse(self.base.render)
-        
-        for i in range(self.queue.getNumEntries()):
-            entry = self.queue.getEntry(i)
-            if entry.getFromNode().name == "player_wall_ray":
-                if entry.getIntoNode().getIntoCollideMask().hasBit(self.MASK_CLIMBABLE.getLowestOnBit()):
-                    return True
-        
-        return False
+    def update(self, task):
+        """Update physics simulation"""
+        dt = globalClock.getDt()
+        self.world.doPhysics(dt)
+        return task.cont
     
     def cleanup(self):
-        """Clean up collision system"""
-        self.traverser.clearColliders() 
+        """Clean up physics world"""
+        self.base.taskMgr.remove("physics_update")
+        # Remove all bodies from the world
+        for node in self.base.render.findAllMatches('**/+BulletRigidBodyNode'):
+            self.world.removeRigidBody(node.node())
+        for node in self.base.render.findAllMatches('**/+BulletCharacterControllerNode'):
+            self.world.removeCharacter(node.node()) 
