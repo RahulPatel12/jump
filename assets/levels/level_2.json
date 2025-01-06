@@ -1,0 +1,141 @@
+{
+    "name": "Level 2",
+    "description": "Combat Training - Use the walls as cover while making your way up!",
+    "spawn_point": [0, 0, 2],
+    "platforms": [
+        {
+            "position": [0, 0, 0],
+            "scale": [15, 15, 0.5],
+            "color": [0.2, 0.5, 0.2, 1],
+            "type": "ground",
+            "id": "ground"
+        },
+        {
+            "position": [-5, 5, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_1"
+        },
+        {
+            "position": [5, 8, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_2"
+        },
+        {
+            "position": [-5, 12, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_3"
+        },
+        {
+            "position": [4, 4, 3],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_1"
+        },
+        {
+            "position": [-3, 7, 5],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_2"
+        },
+        {
+            "position": [5, 10, 7],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_3"
+        },
+        {
+            "position": [-4, 13, 9],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_4"
+        },
+        {
+            "position": [0, 15, 11],
+            "scale": [3, 3, 0.5],
+            "color": [0.3, 0.6, 0.9, 1],
+            "type": "checkpoint",
+            "id": "checkpoint_1"
+        },
+        {
+            "position": [4, 18, 13],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_6"
+        },
+        {
+            "position": [-3, 21, 15],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_7"
+        },
+        {
+            "position": [3, 24, 17],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_8"
+        },
+        {
+            "position": [-2, 27, 19],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_9"
+        },
+        {
+            "position": [0, 30, 21],
+            "scale": [3, 3, 0.5],
+            "color": [0.9, 0.8, 0.3, 1],
+            "type": "victory",
+            "id": "victory_pad"
+        }
+    ],
+    "checkpoints": [
+        {
+            "id": "checkpoint_1",
+            "spawn_point": [0, 15, 12],
+            "platform_id": "platform_5"
+        }
+    ],
+    "enemy_spawns": [
+        {
+            "position": [3, 6, 1],
+            "type": "basic",
+            "patrol_points": [
+                [3, 6, 1],
+                [3, 9, 1]
+            ]
+        },
+        {
+            "position": [-3, 10, 1],
+            "type": "basic",
+            "patrol_points": [
+                [-3, 10, 1],
+                [-3, 13, 1]
+            ]
+        }
+    ],
+    "victory": {
+        "platform_id": "victory_pad",
+        "trigger_height": 21.5
+    },
+    "level_bounds": {
+        "min": [-15, -15, -10],
+        "max": [15, 35, 25]
+    },
+    "difficulty": 2,
+    "par_time": 90,
+    "next_level": 3
+} 

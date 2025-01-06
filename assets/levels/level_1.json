@@ -1,0 +1,101 @@
+{
+    "name": "Level 1",
+    "description": "The Journey Begins - Master the art of jumping!",
+    "spawn_point": [0, 0, 2],
+    "platforms": [
+        {
+            "position": [0, 0, 0],
+            "scale": [10, 10, 0.5],
+            "color": [0.2, 0.5, 0.2, 1],
+            "type": "ground"
+        },
+        {
+            "position": [3, 3, 2],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_1"
+        },
+        {
+            "position": [-2, 6, 4],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_2"
+        },
+        {
+            "position": [4, 8, 6],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_3"
+        },
+        {
+            "position": [0, 11, 8],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_4"
+        },
+        {
+            "position": [-3, 14, 10],
+            "scale": [3, 3, 0.5],
+            "color": [0.3, 0.6, 0.9, 1],
+            "type": "checkpoint",
+            "id": "checkpoint_1"
+        },
+        {
+            "position": [3, 17, 12],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_6"
+        },
+        {
+            "position": [-2, 20, 14],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_7"
+        },
+        {
+            "position": [4, 23, 16],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_8"
+        },
+        {
+            "position": [0, 26, 18],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_9"
+        },
+        {
+            "position": [0, 29, 20],
+            "scale": [3, 3, 0.5],
+            "color": [0.9, 0.8, 0.3, 1],
+            "type": "victory",
+            "id": "victory_pad"
+        }
+    ],
+    "checkpoints": [
+        {
+            "id": "checkpoint_1",
+            "spawn_point": [-3, 14, 11],
+            "platform_id": "platform_5"
+        }
+    ],
+    "victory": {
+        "platform_id": "victory_pad",
+        "trigger_height": 20.5
+    },
+    "level_bounds": {
+        "min": [-15, -15, -10],
+        "max": [15, 35, 25]
+    },
+    "difficulty": 1,
+    "par_time": 60,
+    "next_level": 2
+} 

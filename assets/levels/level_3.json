@@ -1,0 +1,155 @@
+{
+    "name": "Level 3",
+    "description": "Boss Battle - Face the final challenge!",
+    "spawn_point": [0, 0, 2],
+    "platforms": [
+        {
+            "position": [0, 0, 0],
+            "scale": [20, 20, 0.5],
+            "color": [0.2, 0.5, 0.2, 1],
+            "type": "ground",
+            "id": "ground"
+        },
+        {
+            "position": [8, 5, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_1"
+        },
+        {
+            "position": [-8, 8, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_2"
+        },
+        {
+            "position": [8, 12, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_3"
+        },
+        {
+            "position": [-8, 16, 0],
+            "scale": [0.5, 3, 4],
+            "color": [0.4, 0.4, 0.4, 1],
+            "type": "wall",
+            "id": "wall_4"
+        },
+        {
+            "position": [-5, 4, 3],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_1"
+        },
+        {
+            "position": [6, 7, 5],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_2"
+        },
+        {
+            "position": [-4, 10, 7],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_3"
+        },
+        {
+            "position": [5, 13, 9],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_4"
+        },
+        {
+            "position": [0, 16, 11],
+            "scale": [3, 3, 0.5],
+            "color": [0.3, 0.6, 0.9, 1],
+            "type": "checkpoint",
+            "id": "checkpoint_1"
+        },
+        {
+            "position": [-6, 19, 13],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_6"
+        },
+        {
+            "position": [4, 22, 15],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_7"
+        },
+        {
+            "position": [-5, 25, 17],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_8"
+        },
+        {
+            "position": [3, 28, 19],
+            "scale": [2, 2, 0.5],
+            "color": [0.5, 0.5, 0.5, 1],
+            "type": "platform",
+            "id": "platform_9"
+        },
+        {
+            "position": [0, 32, 21],
+            "scale": [4, 4, 0.5],
+            "color": [0.9, 0.8, 0.3, 1],
+            "type": "victory",
+            "id": "victory_pad"
+        }
+    ],
+    "checkpoints": [
+        {
+            "id": "checkpoint_1",
+            "spawn_point": [0, 16, 12],
+            "platform_id": "platform_5"
+        }
+    ],
+    "enemy_spawns": [
+        {
+            "position": [4, 6, 1],
+            "type": "basic",
+            "patrol_points": [
+                [4, 6, 1],
+                [4, 10, 1]
+            ]
+        },
+        {
+            "position": [-4, 12, 1],
+            "type": "basic",
+            "patrol_points": [
+                [-4, 12, 1],
+                [-4, 16, 1]
+            ]
+        }
+    ],
+    "boss_spawn": {
+        "position": [0, 25, 1],
+        "patrol_area": {
+            "min": [-10, 20, 1],
+            "max": [10, 30, 1]
+        }
+    },
+    "victory": {
+        "platform_id": "victory_pad",
+        "trigger_height": 21.5
+    },
+    "level_bounds": {
+        "min": [-20, -20, -10],
+        "max": [20, 40, 25]
+    },
+    "difficulty": 3,
+    "par_time": 120,
+    "next_level": null
+} 
